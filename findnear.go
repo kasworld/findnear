@@ -5,7 +5,7 @@ import (
 	"math"
 	"sort"
 
-	"kasworld/goguelike/lib/direction"
+	"github.com/kasworld/direction"
 )
 
 type XYLen struct {
