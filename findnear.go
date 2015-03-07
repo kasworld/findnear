@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/kasworld/direction"
-	"github.com/kasworld/go-abs"
+	// "github.com/kasworld/go-abs"
 )
 
 type XYLen struct {
@@ -77,26 +77,4 @@ func Call4WayTile(ox, oy int, fn DoFn) []uint8 {
 		}
 	}
 	return TileDirs
-}
-
-func CallPath(srcx, srcy, dstx, dsty int, fn DoFn) {
-	diffx := dstx - srcx
-	diffy := dsty - srcy
-	xs, xa := abs.SignAbsi(dstx - srcx)
-	ys, ya := abs.SignAbsi(dsty - srcy)
-	if xa > ya { // horizontal
-		for x := srcx + xs; x != dstx; x += xs {
-			y := srcy + (x-srcx)*diffy/diffx
-			if fn(x, y) {
-				return
-			}
-		}
-	} else {
-		for y := srcy + ys; y != dsty; y += ys {
-			x := srcx + (y-srcy)*diffx/diffy
-			if fn(x, y) {
-				return
-			}
-		}
-	}
 }
