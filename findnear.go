@@ -69,20 +69,20 @@ func (pll XYLenList) Find(x, y int, start, end int, fn DoFn) bool {
 	return false
 }
 
-func Call8WayTile(ox, oy int, fn DoFn) []uint8 {
-	TileDirs := []uint8{}
-	for i := uint8(1); i <= 8; i++ {
-		x, y := ox+direction.Dir2Info[i].Vt[0], oy+direction.Dir2Info[i].Vt[1]
+func Call8WayTile(ox, oy int, fn DoFn) []direction.Dir_Type {
+	TileDirs := []direction.Dir_Type{}
+	for i := direction.Dir_Type(1); i <= 8; i++ {
+		x, y := ox+i.Vt()[0], oy+i.Vt()[1]
 		if fn(x, y) {
 			TileDirs = append(TileDirs, i)
 		}
 	}
 	return TileDirs
 }
-func Call4WayTile(ox, oy int, fn DoFn) []uint8 {
-	TileDirs := []uint8{}
-	for i := uint8(1); i <= 8; i += 2 {
-		x, y := ox+direction.Dir2Info[i].Vt[0], oy+direction.Dir2Info[i].Vt[1]
+func Call4WayTile(ox, oy int, fn DoFn) []direction.Dir_Type {
+	TileDirs := []direction.Dir_Type{}
+	for i := direction.Dir_Type(1); i <= 8; i += 2 {
+		x, y := ox+i.Vt()[0], oy+i.Vt()[1]
 		if fn(x, y) {
 			TileDirs = append(TileDirs, i)
 		}
