@@ -1,4 +1,4 @@
-// Copyright 2015 SeukWon Kang (kasworld@gmail.com)
+// Copyright 2015,2016,2017,2018,2019 SeukWon Kang (kasworld@gmail.com)
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -13,18 +13,81 @@
 package findnear
 
 import (
+	"fmt"
 	"math"
 	"sort"
-
-	"github.com/kasworld/direction"
-	// "github.com/kasworld/go-abs"
+	"sync"
 )
+
+var g_xylenList map[[2]int]XYLenList
+var g_mutex sync.Mutex
+
+func init() {
+	g_xylenList = make(map[[2]int]XYLenList)
+}
+
+func G_XYLenListInfo() string {
+	return fmt.Sprintf("%v", g_xylenList)
+}
+
+func NewXYLenList(xmax, ymax int) XYLenList {
+	g_mutex.Lock()
+	defer g_mutex.Unlock()
+
+	xyll, exist := g_xylenList[[2]int{xmax, ymax}]
+	if exist {
+		return xyll
+	}
+
+	xyll = makeNewXYLenList(xmax, ymax)
+	g_xylenList[[2]int{xmax, ymax}] = xyll
+	return xyll
+}
+
+func makeNewXYLenList(xmax, ymax int) XYLenList {
+	rtn := make(XYLenList, 0)
+	for i := 0; i < xmax; i++ {
+		for j := 0; j < ymax; j++ {
+			x := i - xmax/2
+			y := j - ymax/2
+			rtn = append(rtn, XYLen{
+				x, y,
+				math.Sqrt(float64(x*x + y*y)),
+			})
+		}
+	}
+	sort.Sort(rtn)
+	return rtn
+}
 
 type XYLen struct {
 	X, Y int
 	L    float64
 }
+
+func (xyl XYLen) String() string {
+	return fmt.Sprintf("XYLen[%d %d %.2f]",
+		xyl.X, xyl.Y, xyl.L,
+	)
+}
+
+func (xyl XYLen) Sub(arg XYLen) XYLen {
+	return XYLen{
+		xyl.X - arg.X,
+		xyl.Y - arg.Y,
+		xyl.L - arg.L,
+	}
+}
+
+func (xyl XYLen) IsSamePos(xyl2 XYLen) bool {
+	return xyl.X == xyl2.X && xyl.Y == xyl2.Y
+}
+
 type XYLenList []XYLen
+
+// func (s XYLenList) String() string {
+// 	return fmt.Sprintf("XYLenList[%v]", len(s))
+// }
 
 func (s XYLenList) Len() int {
 	return len(s)
@@ -36,17 +99,19 @@ func (s XYLenList) Less(i, j int) bool {
 	return s[i].L < s[j].L
 }
 
-func NewXYLenList(xmax, ymax int) XYLenList {
-	rtn := make(XYLenList, 0)
-	for x := -xmax / 2; x < xmax/2; x++ {
-		for y := -ymax / 2; y < ymax/2; y++ {
-			rtn = append(rtn, XYLen{
-				x, y,
-				math.Sqrt(float64(x*x + y*y)),
-			})
-		}
+func (pll XYLenList) SumLen() float64 {
+	rtn := 0.0
+	for _, v := range pll {
+		rtn += v.L
 	}
-	sort.Sort(rtn)
+	return rtn
+}
+
+func (pll XYLenList) MakePos2Index() map[[2]int]int {
+	rtn := make(map[[2]int]int)
+	for i, v := range pll {
+		rtn[[2]int{v.X, v.Y}] = i
+	}
 	return rtn
 }
 
@@ -67,25 +132,4 @@ func (pll XYLenList) Find(x, y int, start, end int, fn DoFn) bool {
 		}
 	}
 	return false
-}
-
-func Call8WayTile(ox, oy int, fn DoFn) []direction.Dir_Type {
-	TileDirs := []direction.Dir_Type{}
-	for i := direction.Dir_Type(1); i <= 8; i++ {
-		x, y := ox+i.Vt()[0], oy+i.Vt()[1]
-		if fn(x, y) {
-			TileDirs = append(TileDirs, i)
-		}
-	}
-	return TileDirs
-}
-func Call4WayTile(ox, oy int, fn DoFn) []direction.Dir_Type {
-	TileDirs := []direction.Dir_Type{}
-	for i := direction.Dir_Type(1); i <= 8; i += 2 {
-		x, y := ox+i.Vt()[0], oy+i.Vt()[1]
-		if fn(x, y) {
-			TileDirs = append(TileDirs, i)
-		}
-	}
-	return TileDirs
 }
